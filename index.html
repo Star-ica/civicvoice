@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CivicVoice — Decentralized Public Petitions</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --primary: #1f6feb;
+  --primary-h: #388bfd;
+  --success: #2ea043;
+  --warning: #d29922;
+  --danger: #da3633;
+  --purple: #8957e5;
+  --teal: #0d6e6e;
+  --radius: 10px;
+  --shadow: 0 4px 24px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+a{color:var(--primary);text-decoration:none}
+a:hover{color:var(--primary-h)}
+button{cursor:pointer;border:none;border-radius:var(--radius);font-family:inherit;font-size:.9rem;font-weight:600;transition:all .2s}
+input,select,textarea{font-family:inherit;font-size:.9rem;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;width:100%;outline:none;transition:border .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--primary)}
+textarea{resize:vertical;min-height:100px}
+.btn-primary{background:var(--primary);color:#fff;padding:.6rem 1.4rem}
+.btn-primary:hover{background:var(--primary-h)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);padding:.6rem 1.2rem}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary)}
+.btn-success{background:var(--success);color:#fff;padding:.6rem 1.2rem}
+.btn-success:hover{filter:brightness(1.1)}
+.btn-danger{background:var(--danger);color:#fff;padding:.6rem 1.2rem}
+.btn-sm{padding:.35rem .8rem;font-size:.8rem}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem}
+.badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.75rem;font-weight:600}
+.badge-active{background:#1f3a2a;color:#2ea043}
+.badge-reached{background:#1f2d4a;color:#3b82f6}
+.badge-closed{background:#2d2d2d;color:#8b949e}
+.badge-cancelled{background:#3a1f1f;color:#da3633}
+.badge-verified{background:#2d1f4a;color:#8957e5}
+.progress-bar{background:var(--bg3);border-radius:20px;height:8px;overflow:hidden;margin:.5rem 0}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--purple));border-radius:20px;transition:width .4s}
+.grid{display:grid;gap:1.2rem}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.grid-3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.flex{display:flex;align-items:center;gap:.7rem}
+.flex-wrap{flex-wrap:wrap}
+.ml-auto{margin-left:auto}
+.mt-1{margin-top:.5rem}
+.mt-2{margin-top:1rem}
+.mt-3{margin-top:1.5rem}
+.mb-1{margin-bottom:.5rem}
+.text-muted{color:var(--muted);font-size:.85rem}
+.text-center{text-align:center}
+.section-title{font-size:1.6rem;font-weight:700;margin-bottom:.3rem}
+.section-sub{color:var(--muted);margin-bottom:1.5rem}
+.form-group{margin-bottom:1.1rem}
+.form-group label{display:block;font-size:.85rem;font-weight:600;margin-bottom:.35rem;color:var(--muted)}
+.form-group select option{background:var(--bg3)}
+.alert{padding:.8rem 1.2rem;border-radius:8px;font-size:.9rem;margin:.7rem 0}
+.alert-info{background:#1f2d4a;border:1px solid #1f6feb;color:#8ab4f8}
+.alert-warn{background:#2d2514;border:1px solid var(--warning);color:#e3b341}
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted)}
+.empty-state .icon{font-size:3rem;margin-bottom:.8rem}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:1rem auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* NAV */
+nav{background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;padding:0 1.5rem}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;height:60px;gap:1.5rem}
+.nav-logo{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
+.nav-logo span{font-size:1.4rem}
+.nav-links{display:flex;gap:.3rem;flex:1}
+.nav-links button{background:none;color:var(--muted);padding:.4rem .9rem;border-radius:8px;font-size:.88rem;font-weight:500}
+.nav-links button:hover,.nav-links button.active{background:var(--bg3);color:var(--text)}
+.nav-actions{display:flex;gap:.6rem;margin-left:auto}
+.wallet-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:.4rem 1rem;border-radius:8px;font-size:.85rem;font-weight:600}
+.wallet-btn:hover{border-color:var(--primary)}
+.wallet-connected{border-color:var(--success);color:var(--success)}
+
+/* PAGE WRAPPER */
+.page{display:none;max-width:1200px;margin:0 auto;padding:2rem 1.5rem}
+.page.active{display:block}
+
+/* LANDING */
+.hero{text-align:center;padding:5rem 1rem 3rem;background:radial-gradient(ellipse 60% 40% at 50% 0%,rgba(31,111,235,.12),transparent)}
+.hero h1{font-size:clamp(2rem,5vw,3.4rem);font-weight:800;line-height:1.15;margin-bottom:1rem}
+.hero h1 span{background:linear-gradient(135deg,var(--primary),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:var(--muted);font-size:1.1rem;max-width:580px;margin:0 auto 2rem}
+.hero-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin:3rem 0;max-width:800px;margin-left:auto;margin-right:auto}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.3rem;text-align:center}
+.stat-card .number{font-size:2rem;font-weight:800;color:var(--primary)}
+.stat-card .label{color:var(--muted);font-size:.85rem;margin-top:.2rem}
+.features{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.2rem;max-width:1000px;margin:2rem auto}
+.feature-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem}
+.feature-card .icon{font-size:2rem;margin-bottom:.8rem}
+.feature-card h3{font-size:1rem;margin-bottom:.4rem}
+.feature-card p{color:var(--muted);font-size:.88rem}
+
+/* PETITION CARD */
+.petition-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.3rem;transition:border-color .2s,box-shadow .2s;cursor:pointer}
+.petition-card:hover{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}
+.petition-card .cat{font-size:.75rem;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.4rem}
+.petition-card h3{font-size:1rem;font-weight:700;margin-bottom:.5rem;line-height:1.3}
+.petition-card p{color:var(--muted);font-size:.85rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.8rem}
+.petition-card .meta{display:flex;gap:.8rem;font-size:.8rem;color:var(--muted)}
+.sig-count{font-size:1.3rem;font-weight:800;color:var(--text)}
+
+/* DETAIL PAGE */
+.petition-header{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;margin-bottom:1.5rem}
+.petition-header h1{font-size:1.8rem;font-weight:800;line-height:1.3;margin-bottom:.7rem}
+.creator-info{display:flex;align-items:center;gap:.7rem;margin:1rem 0}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);flex-shrink:0}
+.sign-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;text-align:center;margin-top:1.5rem}
+.sign-box h3{margin-bottom:.5rem}
+.sign-box p{color:var(--muted);font-size:.88rem;margin-bottom:1rem}
+.signed-badge{color:var(--success);font-weight:600;font-size:.95rem}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.5rem;align-items:center}
+.filter-bar input{max-width:280px}
+.filter-btn{background:var(--bg3);border:1px solid var(--border);color:var(--muted);padding:.35rem .9rem;border-radius:20px;font-size:.82rem}
+.filter-btn.active,.filter-btn:hover{border-color:var(--primary);color:var(--primary);background:rgba(31,111,235,.1)}
+
+/* DASHBOARD */
+.dash-header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.dash-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--purple));display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.8rem;margin-bottom:1.5rem}
+.mini-stat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center}
+.mini-stat .n{font-size:1.6rem;font-weight:800;color:var(--primary)}
+.mini-stat .l{font-size:.78rem;color:var(--muted)}
+
+/* ADMIN */
+.admin-panel{background:var(--bg2);border:1px solid var(--warning);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem}
+
+/* TOAST */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.5rem}
+.toast-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.8rem 1.2rem;font-size:.88rem;box-shadow:var(--shadow);animation:slideIn .3s ease}
+.toast-item.success{border-color:var(--success);color:#2ea043}
+.toast-item.error{border-color:var(--danger);color:#da3633}
+.toast-item.info{border-color:var(--primary);color:#3b82f6}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+@media(max-width:600px){
+  .nav-links{display:none}
+  .hero{padding:3rem 1rem 2rem}
+  .page{padding:1.2rem 1rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo"><span>🗳️</span> CivicVoice</div>
+    <div class="nav-links">
+      <button onclick="showPage('landing')" id="nav-landing" class="active">Home</button>
+      <button onclick="showPage('explorer')" id="nav-explorer">Explore</button>
+      <button onclick="showPage('create')" id="nav-create">Create Petition</button>
+      <button onclick="showPage('dashboard')" id="nav-dashboard">My Dashboard</button>
+      <button onclick="showPage('org-dashboard')" id="nav-org-dashboard">Organization</button>
+      <button onclick="showPage('admin')" id="nav-admin">Admin</button>
+    </div>
+    <div class="nav-actions">
+      <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<!-- ══════════ LANDING ══════════ -->
+<div class="page active" id="page-landing">
+  <div class="hero">
+    <h1>Your Voice,<br><span>On the Blockchain</span></h1>
+    <p>Create and sign petitions that are permanently recorded on BOT Chain. Transparent, censorship-resistant civic participation.</p>
+    <div class="hero-actions">
+      <button class="btn-primary" style="font-size:1rem;padding:.8rem 2rem" onclick="showPage('explorer')">🔍 Explore Petitions</button>
+      <button class="btn-outline" style="font-size:1rem;padding:.8rem 2rem" onclick="showPage('create')">✍️ Start a Petition</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="number" id="statPetitions">—</div><div class="label">Petitions Created</div></div>
+    <div class="stat-card"><div class="number" id="statSignatures">—</div><div class="label">Total Signatures</div></div>
+    <div class="stat-card"><div class="number" id="statOrgs">—</div><div class="label">Organizations</div></div>
+    <div class="stat-card"><div class="number" id="statGoalReached">—</div><div class="label">Goals Reached</div></div>
+  </div>
+
+  <div class="features">
+    <div class="feature-card"><div class="icon">🔗</div><h3>Fully On-Chain</h3><p>Every petition and signature is permanently recorded on BOT Chain — immutable and verifiable by anyone.</p></div>
+    <div class="feature-card"><div class="icon">🛡️</div><h3>Censorship Resistant</h3><p>No central authority can delete or modify petitions. The blockchain is your record keeper.</p></div>
+    <div class="feature-card"><div class="icon">🏛️</div><h3>Organization Responses</h3><p>Verified organizations can officially respond to petitions, creating a transparent dialogue.</p></div>
+    <div class="feature-card"><div class="icon">📊</div><h3>Live Progress</h3><p>Track signature milestones and goals in real time with on-chain data you can verify yourself.</p></div>
+  </div>
+
+  <div class="alert alert-warn" style="max-width:700px;margin:2rem auto">
+    <strong>⚠️ Identity Disclosure:</strong> One wallet = one signature. CivicVoice cannot verify that wallets represent unique individuals. One person may control multiple wallets. Signatures reflect wallet addresses, not unique human identities.
+  </div>
+
+  <div style="margin-top:3rem">
+    <h2 style="font-size:1.3rem;margin-bottom:1rem;text-align:center">Trending Petitions</h2>
+    <div class="grid grid-2" id="landingPetitions">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ EXPLORER ══════════ -->
+<div class="page" id="page-explorer">
+  <h1 class="section-title">Explore Petitions</h1>
+  <p class="section-sub">Browse all petitions on BOT Chain</p>
+
+  <div class="filter-bar">
+    <input type="text" placeholder="🔍 Search petitions..." id="searchInput" oninput="filterPetitions()">
+    <button class="filter-btn active" onclick="setCatFilter('')" id="filter-all">All</button>
+    <button class="filter-btn" onclick="setCatFilter('Environment')" id="filter-env">🌱 Environment</button>
+    <button class="filter-btn" onclick="setCatFilter('Education')" id="filter-edu">📚 Education</button>
+    <button class="filter-btn" onclick="setCatFilter('Transport')" id="filter-trans">🚌 Transport</button>
+    <button class="filter-btn" onclick="setCatFilter('Health')" id="filter-health">🏥 Health</button>
+    <button class="filter-btn" onclick="setCatFilter('Economy')" id="filter-econ">💰 Economy</button>
+    <select id="statusFilter" onchange="filterPetitions()" style="max-width:140px">
+      <option value="">All Statuses</option>
+      <option value="0">Active</option>
+      <option value="1">Goal Reached</option>
+      <option value="2">Closed</option>
+    </select>
+  </div>
+
+  <div class="grid grid-2" id="petitionsGrid">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- ══════════ PETITION DETAIL ══════════ -->
+<div class="page" id="page-detail">
+  <button class="btn-outline btn-sm" onclick="showPage('explorer')" style="margin-bottom:1rem">← Back to Explorer</button>
+  <div id="detailContent"><div class="spinner"></div></div>
+</div>
+
+<!-- ══════════ CREATE PETITION ══════════ -->
+<div class="page" id="page-create">
+  <h1 class="section-title">Create a Petition</h1>
+  <p class="section-sub">Your petition will be permanently stored on BOT Chain</p>
+
+  <div class="alert alert-warn">
+    <strong>⚠️ Warning:</strong> Once published on-chain, the petition text cannot be changed. All content is public and permanently visible. Do not include personal or confidential information.
+  </div>
+
+  <div class="card mt-2" style="max-width:680px">
+    <div class="form-group">
+      <label>Petition Title *</label>
+      <input type="text" id="pTitle" placeholder="A clear, specific petition title (max 200 chars)" maxlength="200">
+    </div>
+    <div class="form-group">
+      <label>Description *</label>
+      <textarea id="pDesc" placeholder="Explain why this petition matters and what you want to achieve (max 5000 chars)" maxlength="5000" style="min-height:140px"></textarea>
+    </div>
+    <div class="grid grid-2">
+      <div class="form-group">
+        <label>Category *</label>
+        <select id="pCategory">
+          <option value="">Select category...</option>
+          <option value="Environment">🌱 Environment</option>
+          <option value="Education">📚 Education</option>
+          <option value="Transport">🚌 Transport</option>
+          <option value="Health">🏥 Health</option>
+          <option value="Economy">💰 Economy</option>
+          <option value="Human Rights">✊ Human Rights</option>
+          <option value="Technology">💻 Technology</option>
+          <option value="Community">🏘️ Community</option>
+          <option value="Other">📌 Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Target Signatures *</label>
+        <input type="number" id="pTarget" placeholder="e.g. 1000" min="1" max="1000000">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Deadline (optional)</label>
+      <input type="datetime-local" id="pDeadline">
+      <p class="text-muted mt-1">Leave blank for no deadline</p>
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="createPetition()">📝 Publish Petition On-Chain</button>
+  </div>
+</div>
+
+<!-- ══════════ MY DASHBOARD ══════════ -->
+<div class="page" id="page-dashboard">
+  <div id="dashboardContent">
+    <div class="empty-state">
+      <div class="icon">👛</div>
+      <p>Connect your wallet to view your dashboard</p>
+      <button class="btn-primary mt-2" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ ORG DASHBOARD ══════════ -->
+<div class="page" id="page-org-dashboard">
+  <h1 class="section-title">Organization Dashboard</h1>
+  <p class="section-sub">Register your organization and respond to petitions</p>
+  <div id="orgDashContent"><div class="spinner"></div></div>
+</div>
+
+<!-- ══════════ ADMIN ══════════ -->
+<div class="page" id="page-admin">
+  <h1 class="section-title">Admin Dashboard</h1>
+  <p class="section-sub">Platform administration</p>
+  <div class="admin-panel">
+    <h3>⚠️ Admin Controls</h3>
+    <p class="text-muted mt-1">These controls require the owner wallet to be connected.</p>
+    <div class="flex mt-2 flex-wrap">
+      <button class="btn-danger" onclick="adminPause()">⏸ Pause Contract</button>
+      <button class="btn-success" onclick="adminUnpause()">▶️ Unpause Contract</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:1rem">Organization Verification</h3>
+    <div class="form-group">
+      <label>Organization ID</label>
+      <input type="number" id="verifyOrgId" placeholder="Enter org ID">
+    </div>
+    <div class="flex" style="gap:.7rem">
+      <button class="btn-success btn-sm" onclick="verifyOrg(true)">✓ Verify</button>
+      <button class="btn-danger btn-sm" onclick="verifyOrg(false)">✗ Unverify</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.1/ethers.umd.min.js"></script>
+<script>
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const CONFIG = {
+  chainId: 677,
+  chainName: "BOT Chain",
+  rpcUrl: "https://rpc.botchain.tg",
+  explorerUrl: "https://explorer.botchain.tg",
+  contracts: {
+    PetitionFactory: "0x0000000000000000000000000000000000000001",
+    PetitionRegistry: "0x0000000000000000000000000000000000000002",
+    SignatureManager: "0x0000000000000000000000000000000000000003",
+    OrganizationRegistry: "0x0000000000000000000000000000000000000004",
+    ResponseRegistry: "0x0000000000000000000000000000000000000005"
+  }
+};
+
+const ABIS = {
+  PetitionFactory: [
+    "function createPetition(string,string,string,uint256,uint256) returns (uint256)",
+    "function petitionCount() view returns (uint256)",
+    "function pause()",
+    "function unpause()",
+    "event PetitionCreated(uint256 indexed,address indexed,string,string,uint256,uint256)"
+  ],
+  PetitionRegistry: [
+    "function getPetition(uint256) view returns (tuple(uint256 id,address creator,string title,string description,string category,uint256 targetSignatures,uint256 currentSignatures,uint256 deadline,uint8 status,uint256 createdAt,bool exists))",
+    "function hasSigned(uint256,address) view returns (bool)",
+    "function getPetitionsByCreator(address) view returns (uint256[])",
+    "function getPetitionsByCategory(string) view returns (uint256[])",
+    "function closePetition(uint256)",
+    "function cancelPetition(uint256)",
+    "function getSigners(uint256,uint256,uint256) view returns (address[],uint256)"
+  ],
+  SignatureManager: [
+    "function sign(uint256)",
+    "function hasSigned(uint256,address) view returns (bool)"
+  ],
+  OrganizationRegistry: [
+    "function registerOrganization(string,string,string) returns (uint256)",
+    "function isOrg(address) view returns (bool)",
+    "function getOrgId(address) view returns (uint256)",
+    "function getOrganization(uint256) view returns (tuple(uint256 id,address wallet,string name,string orgType,string website,bool verified,bool exists,uint256 registeredAt))",
+    "function orgCount() view returns (uint256)",
+    "function setVerified(uint256,bool)"
+  ],
+  ResponseRegistry: [
+    "function postResponse(uint256,string,string)",
+    "function postUpdate(uint256,string)",
+    "function getResponsesForPetition(uint256) view returns (uint256[])",
+    "function getResponse(uint256) view returns (tuple(uint256 id,uint256 petitionId,uint256 orgId,address responder,string responseText,string actionTaken,uint256 timestamp,bool exists))",
+    "function getUpdatesForPetition(uint256) view returns (tuple(uint256 id,uint256 petitionId,address creator,string updateText,uint256 timestamp)[])"
+  ]
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let provider, signer, userAddress;
+let contracts = {};
+let allPetitions = [];
+let currentCatFilter = '';
+let currentDetailId = null;
+const DEMO = true; // set false after real deployment
+
+// ══════════════════════════════════════════
+// DEMO DATA
+// ══════════════════════════════════════════
+const DEMO_PETITIONS = [
+  {id:1,creator:"0xAbC1...2345",title:"Improve Public Transport in Downtown",description:"We demand better bus routes, more frequent services, and affordable fares for all residents in the downtown area.",category:"Transport",targetSignatures:5000,currentSignatures:3812,deadline:0,status:0,createdAt:Date.now()/1000-86400*5},
+  {id:2,creator:"0xDeF2...6789",title:"Plant 10,000 Trees in Our City",description:"Urban deforestation is harming our air quality and mental health. We call on the city council to fund a tree planting initiative.",category:"Environment",targetSignatures:2000,currentSignatures:2000,deadline:0,status:1,createdAt:Date.now()/1000-86400*12},
+  {id:3,creator:"0xAaB3...9012",title:"Free School Meals for All Students",description:"No child should go hungry at school. We petition the Ministry of Education to provide free nutritious meals to every student.",category:"Education",targetSignatures:10000,currentSignatures:7245,deadline:Date.now()/1000+86400*20,status:0,createdAt:Date.now()/1000-86400*8},
+  {id:4,creator:"0xCcD4...3456",title:"Reduce Plastic Packaging in Supermarkets",description:"Supermarkets must offer plastic-free alternatives for all produce by 2027. Single-use plastic is destroying our ecosystems.",category:"Environment",targetSignatures:3000,currentSignatures:1200,deadline:Date.now()/1000+86400*45,status:0,createdAt:Date.now()/1000-86400*2},
+  {id:5,creator:"0xEeF5...7890",title:"Universal Access to High-Speed Internet",description:"Internet access is a human right. We demand affordable broadband for every household regardless of location.",category:"Technology",targetSignatures:8000,currentSignatures:4321,deadline:0,status:0,createdAt:Date.now()/1000-86400*15},
+  {id:6,creator:"0xFfG6...1234",title:"Ban Single-Use Plastic Bags",description:"Plastic bag pollution is a crisis. We call for an immediate ban with biodegradable alternatives made available.",category:"Environment",targetSignatures:1500,currentSignatures:1500,deadline:0,status:1,createdAt:Date.now()/1000-86400*30},
+];
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  document.getElementById('nav-' + id)?.classList.add('active');
+  if (id === 'explorer') loadExplorer();
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'landing') loadLanding();
+  if (id === 'org-dashboard') loadOrgDashboard();
+  window.scrollTo(0,0);
+}
+
+// ══════════════════════════════════════════
+// WALLET
+// ══════════════════════════════════════════
+async function connectWallet() {
+  if (!window.ethereum) return toast("MetaMask not detected", "error");
+  try {
+    await window.ethereum.request({method:'eth_requestAccounts'});
+    provider = new ethers.BrowserProvider(window.ethereum);
+    const network = await provider.getNetwork();
+    if (Number(network.chainId) !== CONFIG.chainId) {
+      try {
+        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x2A5'}]});
+      } catch {
+        await window.ethereum.request({method:'wallet_addEthereumChain',params:[{
+          chainId:'0x2A5',chainName:CONFIG.chainName,
+          rpcUrls:[CONFIG.rpcUrl],
+          nativeCurrency:{name:'BOT',symbol:'BOT',decimals:18},
+          blockExplorerUrls:[CONFIG.explorerUrl]
+        }]});
+      }
+      provider = new ethers.BrowserProvider(window.ethereum);
+    }
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
+    document.getElementById('walletBtn').textContent = shortAddr(userAddress);
+    document.getElementById('walletBtn').classList.add('wallet-connected');
+    initContracts();
+    toast("Wallet connected!", "success");
+    loadLanding();
+  } catch(e) { toast("Connection failed: " + e.message, "error"); }
+}
+
+function initContracts() {
+  for (const [name, abi] of Object.entries(ABIS)) {
+    contracts[name] = new ethers.Contract(CONFIG.contracts[name], abi, signer);
+  }
+}
+
+function shortAddr(a) { return a ? a.slice(0,6)+'...'+a.slice(-4) : ''; }
+
+// ══════════════════════════════════════════
+// LOAD LANDING
+// ══════════════════════════════════════════
+async function loadLanding() {
+  const pets = DEMO ? DEMO_PETITIONS : await fetchAllPetitions();
+  document.getElementById('statPetitions').textContent = pets.length;
+  document.getElementById('statSignatures').textContent = pets.reduce((s,p)=>s+Number(p.currentSignatures),0).toLocaleString();
+  document.getElementById('statOrgs').textContent = DEMO ? '12' : '—';
+  document.getElementById('statGoalReached').textContent = pets.filter(p=>p.status===1).length;
+  const top = pets.filter(p=>p.status===0).sort((a,b)=>b.currentSignatures-a.currentSignatures).slice(0,4);
+  document.getElementById('landingPetitions').innerHTML = top.map(p=>petitionCardHTML(p)).join('');
+}
+
+// ══════════════════════════════════════════
+// PETITION CARDS
+// ══════════════════════════════════════════
+function petitionCardHTML(p) {
+  const pct = Math.min(100, Math.round(Number(p.currentSignatures)/Number(p.targetSignatures)*100));
+  const statusBadge = {0:'badge-active',1:'badge-reached',2:'badge-closed',3:'badge-cancelled'}[p.status];
+  const statusLabel = {0:'Active',1:'Goal Reached',2:'Closed',3:'Cancelled'}[p.status];
+  return `<div class="petition-card" onclick="openPetition(${p.id})">
+    <div class="cat">${p.category}</div>
+    <h3>${escHtml(p.title)}</h3>
+    <p>${escHtml(p.description)}</p>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="meta">
+      <span><strong style="color:var(--text)">${Number(p.currentSignatures).toLocaleString()}</strong> / ${Number(p.targetSignatures).toLocaleString()} signatures</span>
+      <span>${pct}%</span>
+      <span class="badge ${statusBadge} ml-auto">${statusLabel}</span>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// EXPLORER
+// ══════════════════════════════════════════
+let explorerData = [];
+
+async function loadExplorer() {
+  explorerData = DEMO ? DEMO_PETITIONS : await fetchAllPetitions();
+  allPetitions = explorerData;
+  renderPetitions(explorerData);
+}
+
+function setCatFilter(cat) {
+  currentCatFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  const id = {'':`filter-all`,'Environment':'filter-env','Education':'filter-edu','Transport':'filter-trans','Health':'filter-health','Economy':'filter-econ'}[cat];
+  if(id) document.getElementById(id)?.classList.add('active');
+  filterPetitions();
+}
+
+function filterPetitions() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  let res = explorerData;
+  if (currentCatFilter) res = res.filter(p=>p.category===currentCatFilter);
+  if (q) res = res.filter(p=>p.title.toLowerCase().includes(q)||p.description.toLowerCase().includes(q));
+  if (status!=='') res = res.filter(p=>String(p.status)===status);
+  renderPetitions(res);
+}
+
+function renderPetitions(list) {
+  const grid = document.getElementById('petitionsGrid');
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No petitions found</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(p=>petitionCardHTML(p)).join('');
+}
+
+// ══════════════════════════════════════════
+// PETITION DETAIL
+// ══════════════════════════════════════════
+async function openPetition(id) {
+  currentDetailId = id;
+  showPage('detail');
+  const p = DEMO ? DEMO_PETITIONS.find(x=>x.id===id) : await fetchPetition(id);
+  if (!p) { document.getElementById('detailContent').innerHTML = '<p>Petition not found</p>'; return; }
+  const pct = Math.min(100, Math.round(Number(p.currentSignatures)/Number(p.targetSignatures)*100));
+  const statusLabel = {0:'Active',1:'Goal Reached',2:'Closed',3:'Cancelled'}[p.status];
+  const statusBadge = {0:'badge-active',1:'badge-reached',2:'badge-closed',3:'badge-cancelled'}[p.status];
+  const signed = userAddress && DEMO ? false : false;
+  const deadlineStr = p.deadline ? new Date(Number(p.deadline)*1000).toLocaleDateString() : 'No deadline';
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="petition-header">
+      <div class="flex flex-wrap" style="gap:.5rem;margin-bottom:.7rem">
+        <span class="badge" style="background:rgba(137,87,229,.15);color:var(--purple)">${p.category}</span>
+        <span class="badge ${statusBadge}">${statusLabel}</span>
+      </div>
+      <h1>${escHtml(p.title)}</h1>
+      <div class="creator-info">
+        <div class="avatar">👤</div>
+        <div>
+          <div style="font-size:.85rem;color:var(--muted)">Created by</div>
+          <div style="font-size:.88rem;font-family:monospace">${typeof p.creator === 'string' && p.creator.length>10 ? shortAddr(p.creator) : p.creator}</div>
+        </div>
+        <div class="ml-auto text-muted" style="font-size:.82rem">📅 Deadline: ${deadlineStr}</div>
+      </div>
+      <div class="progress-bar" style="height:12px;margin-top:1rem">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="flex" style="margin-top:.5rem">
+        <span style="font-size:1.5rem;font-weight:800">${Number(p.currentSignatures).toLocaleString()}</span>
+        <span style="color:var(--muted);margin-left:.4rem">of ${Number(p.targetSignatures).toLocaleString()} signatures · ${pct}%</span>
+      </div>
+      ${p.status===0 ? `
+      <div class="sign-box">
+        <h3>Sign This Petition</h3>
+        <p>Your wallet signature will be permanently recorded on BOT Chain.</p>
+        ${signed ? `<div class="signed-badge">✅ You have signed this petition</div>` : `<button class="btn-primary" onclick="signPetition(${id})">✍️ Sign Now</button>`}
+      </div>` : ''}
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:1rem">About This Petition</h3>
+      <p style="white-space:pre-wrap">${escHtml(p.description)}</p>
+    </div>
+
+    <div class="card mt-2">
+      <h3 style="margin-bottom:1rem">Share This Petition</h3>
+      <div class="flex flex-wrap">
+        <button class="btn-outline btn-sm" onclick="copyLink(${id})">🔗 Copy Link</button>
+        <button class="btn-outline btn-sm" onclick="shareTwitter(${id}, '${escHtml(p.title).replace(/'/g, "\\'")}')">𝕏 Share on X</button>
+      </div>
+    </div>
+
+    ${p.creator && userAddress && p.creator.toLowerCase()===userAddress.toLowerCase() ? `
+    <div class="card mt-2">
+      <h3 style="margin-bottom:1rem">Creator Controls</h3>
+      <div class="form-group">
+        <label>Post Update</label>
+        <textarea id="updateText" placeholder="Share progress with your supporters..."></textarea>
+      </div>
+      <div class="flex" style="gap:.7rem;flex-wrap:wrap">
+        <button class="btn-primary btn-sm" onclick="postUpdate(${id})">📢 Post Update</button>
+        <button class="btn-outline btn-sm" onclick="closePetitionCall(${id})">🔒 Close Petition</button>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function copyLink(id) {
+  navigator.clipboard.writeText(window.location.origin + window.location.pathname + `#petition/${id}`);
+  toast("Link copied!", "success");
+}
+
+function shareTwitter(id, title) {
+  const url = encodeURIComponent(window.location.href + `#petition/${id}`);
+  const text = encodeURIComponent(`Sign this petition: "${title}" on CivicVoice (BOT Chain)`);
+  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+}
+
+// ══════════════════════════════════════════
+// CREATE PETITION
+// ══════════════════════════════════════════
+async function createPetition() {
+  if (!signer) return toast("Connect wallet first", "error");
+  const title = document.getElementById('pTitle').value.trim();
+  const desc = document.getElementById('pDesc').value.trim();
+  const cat = document.getElementById('pCategory').value;
+  const target = parseInt(document.getElementById('pTarget').value);
+  const deadlineStr = document.getElementById('pDeadline').value;
+  if (!title || !desc || !cat || !target) return toast("Fill all required fields", "error");
+  const deadline = deadlineStr ? Math.floor(new Date(deadlineStr).getTime()/1000) : 0;
+  if (deadline && deadline <= Date.now()/1000) return toast("Deadline must be in the future", "error");
+  if (DEMO) { toast("Demo mode — petition creation disabled. Deploy contracts first.", "info"); return; }
+  try {
+    const tx = await contracts.PetitionFactory.createPetition(title, desc, cat, target, deadline);
+    toast("Transaction sent! Waiting...", "info");
+    await tx.wait();
+    toast("Petition published on-chain! 🎉", "success");
+    showPage('explorer');
+  } catch(e) { toast("Error: " + (e.reason || e.message), "error"); }
+}
+
+// ══════════════════════════════════════════
+// SIGN PETITION
+// ══════════════════════════════════════════
+async function signPetition(id) {
+  if (!signer) return toast("Connect wallet first", "error");
+  if (DEMO) { toast("Demo mode — signing disabled. Deploy contracts first.", "info"); return; }
+  try {
+    const tx = await contracts.SignatureManager.sign(id);
+    toast("Signing... waiting for confirmation", "info");
+    await tx.wait();
+    toast("Petition signed! ✍️", "success");
+    openPetition(id);
+  } catch(e) { toast("Error: " + (e.reason || e.message), "error"); }
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+async function loadDashboard() {
+  if (!userAddress) {
+    document.getElementById('dashboardContent').innerHTML = `
+      <div class="empty-state"><div class="icon">👛</div><p>Connect your wallet to view your dashboard</p>
+      <button class="btn-primary mt-2" onclick="connectWallet()">Connect Wallet</button></div>`;
+    return;
+  }
+  const myPetitions = DEMO ? DEMO_PETITIONS.slice(0,2) : [];
+  document.getElementById('dashboardContent').innerHTML = `
+    <div class="dash-header">
+      <div class="dash-avatar">👤</div>
+      <div>
+        <h2>${shortAddr(userAddress)}</h2>
+        <p class="text-muted">My Civic Profile</p>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="mini-stat"><div class="n">${myPetitions.length}</div><div class="l">Petitions Created</div></div>
+      <div class="mini-stat"><div class="n">—</div><div class="l">Petitions Signed</div></div>
+      <div class="mini-stat"><div class="n">—</div><div class="l">Signatures Received</div></div>
+    </div>
+    <h3 style="margin-bottom:.8rem">My Petitions</h3>
+    ${myPetitions.length ? `<div class="grid grid-2">${myPetitions.map(p=>petitionCardHTML(p)).join('')}</div>` : `<div class="empty-state"><div class="icon">📄</div><p>No petitions yet</p><button class="btn-primary mt-2" onclick="showPage('create')">Create First Petition</button></div>`}
+  `;
+}
+
+// ══════════════════════════════════════════
+// ORG DASHBOARD
+// ══════════════════════════════════════════
+async function loadOrgDashboard() {
+  document.getElementById('orgDashContent').innerHTML = `
+    <div class="card" style="max-width:580px">
+      <h3 style="margin-bottom:1rem">Register Your Organization</h3>
+      <div class="form-group"><label>Organization Name</label><input id="orgName" placeholder="e.g. City Transport Authority"></div>
+      <div class="form-group"><label>Type</label>
+        <select id="orgType"><option value="Government">Government</option><option value="NGO">NGO</option><option value="Corporate">Corporate</option><option value="Community">Community</option></select>
+      </div>
+      <div class="form-group"><label>Website</label><input id="orgWebsite" placeholder="https://yourorg.example"></div>
+      <button class="btn-primary" onclick="registerOrg()">Register Organization</button>
+    </div>
+    <div class="card mt-2" style="max-width:580px">
+      <h3 style="margin-bottom:1rem">Post Response to Petition</h3>
+      <div class="form-group"><label>Petition ID</label><input type="number" id="respPetId" placeholder="1"></div>
+      <div class="form-group"><label>Response</label><textarea id="respText" placeholder="Official response..."></textarea></div>
+      <div class="form-group"><label>Action Taken</label><input id="respAction" placeholder="e.g. Under review, Implemented, Scheduled"></div>
+      <button class="btn-primary" onclick="postOrgResponse()">Post Official Response</button>
+    </div>`;
+}
+
+async function registerOrg() {
+  if (!signer) return toast("Connect wallet first", "error");
+  if (DEMO) { toast("Demo mode — registration disabled. Deploy contracts first.", "info"); return; }
+  try {
+    const tx = await contracts.OrganizationRegistry.registerOrganization(
+      document.getElementById('orgName').value,
+      document.getElementById('orgType').value,
+      document.getElementById('orgWebsite').value
+    );
+    await tx.wait();
+    toast("Organization registered! 🏛️", "success");
+  } catch(e) { toast("Error: " + (e.reason || e.message), "error"); }
+}
+
+async function postOrgResponse() {
+  if (!signer) return toast("Connect wallet first", "error");
+  if (DEMO) { toast("Demo mode — responses disabled. Deploy contracts first.", "info"); return; }
+  try {
+    const tx = await contracts.ResponseRegistry.postResponse(
+      document.getElementById('respPetId').value,
+      document.getElementById('respText').value,
+      document.getElementById('respAction').value
+    );
+    await tx.wait();
+    toast("Response posted on-chain! 📢", "success");
+  } catch(e) { toast("Error: " + (e.reason || e.message), "error"); }
+}
+
+// ══════════════════════════════════════════
+// ADMIN
+// ══════════════════════════════════════════
+async function adminPause() {
+  if (!signer) return toast("Connect wallet first", "error");
+  if (DEMO) { toast("Demo mode", "info"); return; }
+  try { await (await contracts.PetitionFactory.pause()).wait(); toast("Paused", "success"); } catch(e) { toast(e.reason||e.message,"error"); }
+}
+async function adminUnpause() {
+  if (!signer) return toast("Connect wallet first", "error");
+  if (DEMO) { toast("Demo mode", "info"); return; }
+  try { await (await contracts.PetitionFactory.unpause()).wait(); toast("Unpaused","success"); } catch(e) { toast(e.reason||e.message,"error"); }
+}
+async function verifyOrg(val) {
+  if (!signer) return toast("Connect wallet first", "error");
+  const id = document.getElementById('verifyOrgId').value;
+  if (!id) return toast("Enter org ID", "error");
+  if (DEMO) { toast("Demo mode","info"); return; }
+  try { await (await contracts.OrganizationRegistry.setVerified(id,val)).wait(); toast(val?"Org verified ✓":"Org unverified","success"); } catch(e){toast(e.reason||e.message,"error");}
+}
+
+async function postUpdate(id) {
+  if (!signer) return toast("Connect wallet first","error");
+  const text = document.getElementById('updateText').value.trim();
+  if (!text) return toast("Enter update text","error");
+  if (DEMO) { toast("Demo mode","info"); return; }
+  try { await (await contracts.ResponseRegistry.postUpdate(id, text)).wait(); toast("Update posted!","success"); } catch(e){toast(e.reason||e.message,"error");}
+}
+async function closePetitionCall(id) {
+  if (!signer) return toast("Connect wallet first","error");
+  if (!confirm("Close this petition? This cannot be undone.")) return;
+  if (DEMO) { toast("Demo mode","info"); return; }
+  try { await (await contracts.PetitionRegistry.closePetition(id)).wait(); toast("Petition closed","success"); openPetition(id); } catch(e){toast(e.reason||e.message,"error");}
+}
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type='info') {
+  const c = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+async function fetchAllPetitions() {
+  if (!contracts.PetitionFactory) return [];
+  try {
+    const count = Number(await contracts.PetitionFactory.petitionCount());
+    const results = [];
+    for (let i = 1; i <= count; i++) {
+      try { results.push(await contracts.PetitionRegistry.getPetition(i)); } catch {}
+    }
+    return results;
+  } catch { return []; }
+}
+
+async function fetchPetition(id) {
+  if (!contracts.PetitionRegistry) return null;
+  try { return await contracts.PetitionRegistry.getPetition(id); } catch { return null; }
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+loadLanding();
+</script>
+</body>
+</html>

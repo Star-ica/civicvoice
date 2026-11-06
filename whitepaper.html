@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CivicVoice — Decentralized Public Petition Protocol</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--navy:#0d2a4a;--blue:#1e4080;--accent:#1f6feb;--green:#2ea043;--text:#1a1a2e;--muted:#6b7280;--border:#e5e7eb;--bg-alt:#f8fafc}
+  body{font-family:'Inter',system-ui,sans-serif;font-size:11pt;line-height:1.7;color:var(--text);background:#fff;max-width:900px;margin:0 auto;padding:2.5cm}
+  @page{size:A4;margin:2.5cm;@bottom-right{content:"Page " counter(page) " of " counter(pages);font-size:9pt;color:#999}}
+  .title-page{text-align:center;min-height:85vh;display:flex;flex-direction:column;justify-content:center;align-items:center;page-break-after:always;border-bottom:3px solid var(--navy);padding-bottom:2rem}
+  .logo{width:80px;height:80px;background:var(--navy);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 2rem}
+  .title-page h1{font-size:2.8rem;font-weight:700;color:var(--navy);margin-bottom:.5rem}
+  .title-page .sub{font-size:1.3rem;color:var(--blue);margin-bottom:2rem}
+  .title-page .meta{font-size:.9rem;color:var(--muted);line-height:2}
+  .vbadge{display:inline-block;background:var(--navy);color:#fff;padding:.3rem 1rem;border-radius:20px;font-size:.85rem;font-weight:600;margin-bottom:1rem}
+  .abstract{background:var(--bg-alt);border-left:4px solid var(--accent);padding:1.5rem 2rem;margin-top:2rem;text-align:left;border-radius:0 8px 8px 0;font-size:.95rem;max-width:700px}
+  .toc{page-break-after:always}
+  .toc h2{font-size:1.6rem;color:var(--navy);border-bottom:2px solid var(--navy);padding-bottom:.5rem;margin-bottom:1.5rem}
+  .toc ol{list-style:none;counter-reset:toc}
+  .toc>ol>li{counter-increment:toc;margin-bottom:.4rem}
+  .toc>ol>li::before{content:counter(toc)". ";font-weight:600;color:var(--navy)}
+  .toc a{color:var(--text);text-decoration:none}
+  .toc ol ol{margin-left:1.5rem;list-style:lower-alpha;color:var(--muted);font-size:.9rem}
+  h2{font-size:1.5rem;color:var(--navy);border-bottom:2px solid var(--border);padding-bottom:.4rem;margin:2.5rem 0 1rem;page-break-after:avoid}
+  h3{font-size:1.15rem;color:var(--blue);margin:1.8rem 0 .6rem;page-break-after:avoid}
+  p{margin-bottom:.9rem}
+  ul,ol{margin:.5rem 0 .9rem 1.5rem}
+  li{margin-bottom:.3rem}
+  pre,code{font-family:'Courier New',monospace;font-size:.85rem}
+  pre{background:#0d2a4a;color:#e2e8f0;padding:1.2rem 1.5rem;border-radius:8px;overflow-x:auto;margin:1rem 0 1.2rem;page-break-inside:avoid}
+  code{background:#f1f5f9;color:#c0392b;padding:.15rem .4rem;border-radius:3px}
+  pre code{background:none;color:inherit;padding:0}
+  table{width:100%;border-collapse:collapse;margin:1rem 0 1.5rem;font-size:.9rem;page-break-inside:avoid}
+  th{background:var(--navy);color:#fff;padding:.7rem 1rem;text-align:left;font-weight:600}
+  td{padding:.6rem 1rem;border-bottom:1px solid var(--border);vertical-align:top}
+  tr:nth-child(even) td{background:var(--bg-alt)}
+  .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:1rem 1.5rem;margin:1rem 0;border-radius:0 6px 6px 0;page-break-inside:avoid}
+  .callout.warn{border-color:#d29922;background:#fffbeb}
+  .callout strong{display:block;margin-bottom:.3rem}
+  .diagram{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin:1rem 0;font-family:monospace;font-size:.82rem;white-space:pre;page-break-inside:avoid}
+  .snum{color:var(--accent);font-weight:700;margin-right:.4rem}
+  footer{margin-top:4rem;border-top:1px solid var(--border);padding-top:1rem;font-size:.8rem;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+
+<div class="title-page">
+  <div class="logo">🗳️</div>
+  <div class="vbadge">Version 1.0 — BOT Chain</div>
+  <h1>CivicVoice</h1>
+  <p class="sub">Decentralized Public Petition Protocol</p>
+  <div class="meta">
+    <div>Network: BOT Chain (Chain ID 677)</div>
+    <div>Stack: Solidity ^0.8.20 · ethers.js v6 · Vanilla JS</div>
+    <div>Published: November 2026</div>
+  </div>
+  <div class="abstract">
+    <strong>Abstract.</strong> CivicVoice is an on-chain public petition and civic participation protocol built on BOT Chain. It enables individuals to publish petitions, collect wallet-based signatures, and receive official responses from registered organizations — all recorded transparently on the blockchain. This document describes the protocol architecture, identity limitations, privacy design, governance model, and security considerations.
+  </div>
+</div>
+
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#s1">Executive Summary</a></li>
+    <li><a href="#s2">Protocol Architecture</a><ol><li>Contract System</li><li>Data Flow</li></ol></li>
+    <li><a href="#s3">Petition Lifecycle</a><ol><li>Creation</li><li>Signing</li><li>Status Transitions</li></ol></li>
+    <li><a href="#s4">Identity Model &amp; Limitations</a></li>
+    <li><a href="#s5">Organization Participation</a></li>
+    <li><a href="#s6">Privacy Considerations</a></li>
+    <li><a href="#s7">Governance &amp; Moderation</a></li>
+    <li><a href="#s8">Security Model</a></li>
+    <li><a href="#s9">Deployment Summary</a></li>
+    <li><a href="#s10">Roadmap</a></li>
+    <li><a href="#s11">Glossary</a></li>
+  </ol>
+</div>
+
+<div id="s1">
+<h2><span class="snum">1.</span> Executive Summary</h2>
+<p>CivicVoice brings civic participation on-chain. Petitions are immutable records. Signatures are wallet transactions. Organization responses are permanent commitments. No central server can remove, censor, or alter any petition or signature once published.</p>
+<p>Key properties:</p>
+<ul>
+  <li><strong>Censorship-resistant.</strong> Petitions and signatures live on BOT Chain and cannot be deleted by any party after publication.</li>
+  <li><strong>Transparent audit trail.</strong> Every signature, response, and status change is queryable on-chain.</li>
+  <li><strong>Honest identity disclosure.</strong> CivicVoice does not claim signatures represent unique humans. One person may control many wallets.</li>
+  <li><strong>Organization accountability.</strong> Registered organizations can post official responses and action updates, creating a verifiable public record of their commitments.</li>
+</ul>
+</div>
+
+<div id="s2">
+<h2><span class="snum">2.</span> Protocol Architecture</h2>
+<h3>2.1 Contract System</h3>
+<table>
+  <thead><tr><th>Contract</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td><code>PetitionFactory</code></td><td>Entry point: creates petitions, enforces validation, owns pause control</td></tr>
+    <tr><td><code>PetitionRegistry</code></td><td>Stores all petition data, signature records, status, and indexes</td></tr>
+    <tr><td><code>SignatureManager</code></td><td>Handles wallet signing with duplicate prevention</td></tr>
+    <tr><td><code>OrganizationRegistry</code></td><td>Registers and verifies official organizations</td></tr>
+    <tr><td><code>ResponseRegistry</code></td><td>Stores org responses and creator updates per petition</td></tr>
+  </tbody>
+</table>
+
+<h3>2.2 Data Flow</h3>
+<div class="diagram">
+Creator ──► PetitionFactory.createPetition()
+                   │
+                   ▼
+            PetitionRegistry (stores petition, indexes by creator + category)
+
+Supporter ──► SignatureManager.sign(petitionId)
+                   │
+                   ▼
+            PetitionRegistry.recordSignature()
+              (checks: not signed, not expired, status Active)
+              (updates: hasSigned[id][wallet] = true, currentSignatures++)
+              (triggers: GoalReached if currentSignatures >= targetSignatures)
+
+Organization ──► ResponseRegistry.postResponse(petitionId, text, action)
+                   │
+                   ▼
+            Stored on-chain, indexed by petitionId
+
+Creator ──► ResponseRegistry.postUpdate(petitionId, text)
+           PetitionRegistry.closePetition(petitionId)
+</div>
+</div>
+
+<div id="s3">
+<h2><span class="snum">3.</span> Petition Lifecycle</h2>
+<h3>3.1 Creation</h3>
+<p>Any wallet can create a petition by calling <code>PetitionFactory.createPetition()</code> with:</p>
+<ul>
+  <li>Title (1–200 characters)</li>
+  <li>Description (1–5,000 characters)</li>
+  <li>Category (up to 60 characters)</li>
+  <li>Target signature count (&gt; 0)</li>
+  <li>Deadline (Unix timestamp, or 0 for no deadline)</li>
+</ul>
+<p>All text is stored directly on-chain. There is no IPFS, no centralized storage, no backend.</p>
+
+<h3>3.2 Signing</h3>
+<p>Any wallet can sign any Active petition by calling <code>SignatureManager.sign(petitionId)</code>. The contract enforces:</p>
+<ul>
+  <li>Petition must be in Active status</li>
+  <li>Deadline must not have passed (if set)</li>
+  <li>The signing wallet must not have already signed this petition</li>
+</ul>
+
+<h3>3.3 Status Transitions</h3>
+<div class="diagram">
+Active ──► GoalReached   (auto: when currentSignatures >= targetSignatures)
+Active ──► Closed        (by creator or admin)
+Active ──► Cancelled     (by creator, only if 0 signatures)
+GoalReached ──► Closed   (by creator or admin)
+</div>
+<p>There is no "reactivation" — status transitions are one-directional.</p>
+</div>
+
+<div id="s4">
+<h2><span class="snum">4.</span> Identity Model &amp; Limitations</h2>
+<div class="callout warn">
+  <strong>⚠️ Important Disclosure</strong>
+  CivicVoice records wallet signatures, not unique human identities. One person may control multiple wallets and sign the same petition multiple times using different addresses. CivicVoice makes no claim that signature counts represent unique individuals.
+</div>
+<p>This is a fundamental constraint of pseudonymous blockchain technology. Meaningful interpretation of petition signatures requires acknowledgment of this limitation by petition creators, recipients, and observers.</p>
+<p>Potential mitigations (not implemented in v1.0):</p>
+<ul>
+  <li>Integration with on-chain identity or proof-of-humanity protocols</li>
+  <li>Social verification via organization-issued credentials</li>
+  <li>Sybil-resistance mechanisms such as token holding requirements or staking</li>
+</ul>
+<p>These mitigations are considered for future versions. The v1.0 protocol is intentionally transparent about its limitations rather than making false claims of uniqueness.</p>
+</div>
+
+<div id="s5">
+<h2><span class="snum">5.</span> Organization Participation</h2>
+<p>Organizations register once via <code>OrganizationRegistry.registerOrganization()</code> with their name, type, and website. The platform admin can mark organizations as verified, adding a visual badge but not granting extra on-chain permissions.</p>
+<p>Registered organizations can:</p>
+<ul>
+  <li>Post official responses to any petition via <code>ResponseRegistry.postResponse()</code></li>
+  <li>Include a free-text action field describing steps taken</li>
+</ul>
+<p>All responses are permanent and publicly readable. Organizations cannot delete or modify posted responses.</p>
+</div>
+
+<div id="s6">
+<h2><span class="snum">6.</span> Privacy Considerations</h2>
+<p>All data stored on BOT Chain is public and permanently visible to anyone with chain access. This applies to:</p>
+<ul>
+  <li>Petition text (title, description)</li>
+  <li>Signing wallet addresses</li>
+  <li>Organization responses</li>
+  <li>Creator updates</li>
+</ul>
+<div class="callout">
+  <strong>ℹ️ Privacy Warning</strong>
+  Users must not publish personally identifiable information, private data, confidential communications, or anything they would not want permanently and publicly associated with their wallet address.
+</div>
+<p>CivicVoice does not and cannot support private or confidential petitions in v1.0. Any sensitive petition content should be handled through off-chain channels with only a reference hash stored on-chain — this feature is not implemented in the current version.</p>
+</div>
+
+<div id="s7">
+<h2><span class="snum">7.</span> Governance &amp; Moderation</h2>
+<p>CivicVoice is a permissionless publishing protocol. The platform owner controls:</p>
+<ul>
+  <li>Emergency pause on petition creation and signing</li>
+  <li>Organization verification badges</li>
+</ul>
+<p>The platform owner cannot: delete petitions, remove signatures, alter petition text, or prevent organizations from responding. These immutability properties are enforced by the smart contracts.</p>
+<p>Moderation in v1.0 is limited to pausing new submissions during emergencies. Petition content is the responsibility of the creator. Illegal content published on-chain remains visible at the smart contract level regardless of frontend access.</p>
+</div>
+
+<div id="s8">
+<h2><span class="snum">8.</span> Security Model</h2>
+<table>
+  <thead><tr><th>Concern</th><th>Mitigation</th></tr></thead>
+  <tbody>
+    <tr><td>Duplicate signature</td><td><code>hasSigned[petitionId][wallet]</code> mapping checked before recording</td></tr>
+    <tr><td>Signing after deadline</td><td>Block timestamp compared to deadline in <code>recordSignature</code></td></tr>
+    <tr><td>Unauthorized petition modification</td><td>Only creator or owner can close; only creator (with 0 sigs) can cancel</td></tr>
+    <tr><td>Spam petitions</td><td>Gas cost as natural rate limiter; optional future deposit requirement</td></tr>
+    <tr><td>Fake organization responses</td><td>Only <code>isOrg[wallet] == true</code> can post responses</td></tr>
+    <tr><td>Fake creator updates</td><td>Update only by <code>petition.creator</code></td></tr>
+    <tr><td>Factory privilege escalation</td><td>Factory is a single address with no backdoor; replaced by SignatureManager after setup</td></tr>
+    <tr><td>Contract paused</td><td>Pause applies to new petitions/signatures; existing records remain readable</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div id="s9">
+<h2><span class="snum">9.</span> Deployment Summary</h2>
+<p>See <code>deploy.md</code> for the full guide. Deploy order:</p>
+<ol>
+  <li><strong>PetitionRegistry</strong> — no constructor args</li>
+  <li><strong>OrganizationRegistry</strong> — no constructor args</li>
+  <li><strong>PetitionFactory</strong> — takes PetitionRegistry address</li>
+  <li>Call <code>registry.setFactory(factoryAddress)</code></li>
+  <li><strong>SignatureManager</strong> — takes PetitionRegistry address</li>
+  <li>Call <code>registry.setFactory(signatureManagerAddress)</code></li>
+  <li><strong>ResponseRegistry</strong> — takes OrgRegistry + PetitionRegistry addresses</li>
+</ol>
+<p>Update the <code>CONFIG</code> block in <code>index.html</code> and set <code>DEMO = false</code>.</p>
+</div>
+
+<div id="s10">
+<h2><span class="snum">10.</span> Roadmap</h2>
+<table>
+  <thead><tr><th>Phase</th><th>Features</th></tr></thead>
+  <tbody>
+    <tr><td>v1.0 (Current)</td><td>Petition creation, wallet signing, org responses, creator updates, status management, pause</td></tr>
+    <tr><td>v1.1</td><td>Petition deposit to deter spam, paginated explorer, category-based trending</td></tr>
+    <tr><td>v2.0</td><td>Optional proof-of-humanity integration, weighted signatures, petition coalitions</td></tr>
+    <tr><td>v2.1</td><td>Organization SLA tracking (response time metrics on-chain), reputation scores</td></tr>
+    <tr><td>v3.0</td><td>Governance votes on petition responses, cross-chain petition visibility</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div id="s11">
+<h2><span class="snum">11.</span> Glossary</h2>
+<table>
+  <thead><tr><th>Term</th><th>Definition</th></tr></thead>
+  <tbody>
+    <tr><td>Petition</td><td>An on-chain record containing a title, description, signature goal, and status</td></tr>
+    <tr><td>Signature</td><td>A wallet transaction confirming support for a petition; one per wallet per petition</td></tr>
+    <tr><td>Target Signatures</td><td>The goal number of signatures the petition creator sets</td></tr>
+    <tr><td>GoalReached</td><td>Status when currentSignatures &gt;= targetSignatures</td></tr>
+    <tr><td>Organization</td><td>A registered entity (government, NGO, corporate, community) that can officially respond</td></tr>
+    <tr><td>Verified</td><td>An admin-granted badge indicating an organization has been identity-checked</td></tr>
+    <tr><td>Response</td><td>An official statement from a registered organization about a petition</td></tr>
+    <tr><td>Update</td><td>A progress note posted by the petition creator</td></tr>
+    <tr><td>Deadline</td><td>Optional Unix timestamp after which no new signatures are accepted</td></tr>
+    <tr><td>Sybil Attack</td><td>Using multiple wallets to fake signature counts — a known limitation of this v1 protocol</td></tr>
+    <tr><td>Immutable</td><td>On-chain data that cannot be changed or deleted after recording</td></tr>
+  </tbody>
+</table>
+</div>
+
+<footer>CivicVoice — Decentralized Public Petition Protocol · BOT Chain (Chain ID 677) · Version 1.0 · November 2026</footer>
+</body>
+</html>
